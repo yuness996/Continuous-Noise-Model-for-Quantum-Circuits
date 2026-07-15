@@ -8,10 +8,9 @@ The code includes the Steane-code encoding circuit, logical gates, syndrome extr
 
 ```text
 .
-├── Oracles.py          # Circuit blocks, coherent-noise model, and recovery
-├── PostProcessing.py   # Circuit execution and logical decoding
-├── Tests.py            # Construction of circuits over a noise grid
-└── README.md
+├── Oracles.py          # Circuit blocks(encoding, logical circuits, stabilizer measure), and recovery(decoding/correction)
+├── PostProcessing.py   # Circuit execution and logical state retrieval
+└── Tests.py            # Construction of circuits over a noise grid
 ```
 
 ## Files
