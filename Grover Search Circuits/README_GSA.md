@@ -17,8 +17,7 @@ The continuous-noise simulation was designed to be run many times in parallel. E
 Grover Search Circuits/
 ├── GSA_Continuous.py
 ├── GSA_Pauli.py
-├── retrieveinfo.py
-└── README_GSA.md
+└── retrieveinfo.py
 ```
 
 ### File roles
@@ -28,7 +27,6 @@ Grover Search Circuits/
 | `GSA_Continuous.py` | Simulates Grover search with random coherent rotations inserted after single-qubit gates |
 | `GSA_Pauli.py`      | Simulates Grover search with a symmetric Pauli channel using Qiskit Aer                  |
 | `retrieveinfo.py`   | Reads and averages the raw curves produced by parallel continuous-noise runs             |
-| `README_GSA.md`     | Explains how to run and compare the simulations                                          |
 
 ---
 
