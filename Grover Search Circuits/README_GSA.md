@@ -1,17 +1,13 @@
-# Grover Search Circuits under Continuous and Pauli Noise
+# Grover Search Circuits
 
-This folder contains Qiskit simulations of Grover's search algorithm under two noise models:
+This folder contains simulations of Grover's search algorithm under:
 
-1. a continuous coherent-noise model;
-2. a symmetric Pauli depolarizing channel.
+* continuous coherent noise;
+* a symmetric Pauli depolarizing channel.
 
-The two simulation scripts have similar structures because they implement the same Grover search circuit. However, the noise is introduced in different ways, and the scripts do not use exactly the same sampling procedure.
+The scripts may look similar because they implement the same Grover circuit with different noise models.
 
-The continuous-noise simulation was designed to be run many times in parallel. Each independent job stores one raw error-probability curve in a text file. The script `retrieveinfo.py` reads these raw curves and computes their point-by-point average.
-
----
-
-## Folder structure
+## Files
 
 ```text
 Grover Search Circuits/
@@ -20,103 +16,44 @@ Grover Search Circuits/
 └── retrieveinfo.py
 ```
 
-### File roles
-
-| File                | Purpose                                                                                  |
-| ------------------- | ---------------------------------------------------------------------------------------- |
-| `GSA_Continuous.py` | Simulates Grover search with random coherent rotations inserted after single-qubit gates |
-| `GSA_Pauli.py`      | Simulates Grover search with a symmetric Pauli channel using Qiskit Aer                  |
-| `retrieveinfo.py`   | Reads and averages the raw curves produced by parallel continuous-noise runs             |
-
----
+| File                | Purpose                                                                        |
+| ------------------- | ------------------------------------------------------------------------------ |
+| `GSA_Continuous.py` | Simulates Grover search with coherent errors inserted after single-qubit gates |
+| `GSA_Pauli.py`      | Simulates Grover search with a symmetric Pauli channel using Qiskit Aer        |
+| `retrieveinfo.py`   | Reads and averages raw curves produced by repeated continuous-noise runs       |
 
 ## Installation
 
-The simulations require:
-
-* Python 3.10 or later;
-* NumPy;
-* Matplotlib;
-* Qiskit;
-* Qiskit Aer.
-
-Install the required packages with:
-
 ```bash
 python -m pip install numpy matplotlib qiskit qiskit-aer
-```
-
-Move to this directory before running the scripts:
-
-```bash
 cd "Grover Search Circuits"
 ```
 
----
+## Continuous-noise simulation
 
-# Continuous coherent-noise simulation
-
-The continuous model is implemented in:
-
-```text
-GSA_Continuous.py
-```
-
-Run it with:
+Run:
 
 ```bash
 python GSA_Continuous.py
 ```
 
-## Circuit construction
-
-For an `n`-qubit Grover search circuit, the script:
-
-1. prepares the uniform superposition;
-2. builds a phase oracle for the marked state;
-3. builds the Grover diffuser;
-4. decomposes the oracle and diffuser into lower-level gates;
-5. inserts coherent errors after single-qubit gates;
-6. repeats the oracle and diffuser;
-7. measures all qubits;
-8. computes the probability of not measuring the marked state.
-
-The number of Grover iterations is approximated by
-
-```python
-int(np.pi / 4 * np.sqrt(2**n) - 0.5)
-```
-
----
-
-## Continuous error model
-
-The coherent error applied to one qubit is decomposed as
+The coherent error applied to each noisy qubit is
 
 ```text
 Z Rx(2 theta) Rz(-2 phi) Z
 ```
 
-The angles are sampled independently from Gaussian distributions:
+with
 
 ```text
-theta ~ N(0, (k/3)^2)
-phi   ~ N(0, (k/3)^2)
+theta, phi ~ N(0, (k/3)^2),
 ```
 
-where `k` is the continuous-noise strength.
+where `k` is the noise strength.
 
-Fresh noise is inserted only after single-qubit gates. No new physical error is added directly after multi-qubit gates.
+Noise is inserted after single-qubit gates in the decomposed Grover oracle and diffuser.
 
-The circuit itself already contains the sampled coherent errors. It is therefore executed using an ideal `AerSimulator` without an additional Aer noise model.
-
----
-
-## Main continuous-model parameters
-
-The simulation parameters are set at the bottom of `GSA_Continuous.py`.
-
-A typical call is:
+The main parameters are set at the bottom of the file:
 
 ```python
 results = RunGSA_AllNoise(
@@ -128,143 +65,43 @@ results = RunGSA_AllNoise(
     seed=None,
 )
 
-save_table(
-    [results],
-    "GSA6qubits_continuous.txt",
-)
+save_table([results], "GSA6_continuous.txt")
 ```
 
-The parameters are:
+| Parameter | Meaning                                  |
+| --------- | ---------------------------------------- |
+| `a`, `b`  | Exponents of the logarithmic noise range |
+| `num`     | Number of tested noise values            |
+| `shots`   | Number of 100-shot batches               |
+| `n`       | Number of qubits                         |
+| `seed`    | Optional seed for target selection       |
 
-| Parameter | Meaning                                       |
-| --------- | --------------------------------------------- |
-| `a`       | Lower exponent of the logarithmic noise range |
-| `b`       | Upper exponent of the logarithmic noise range |
-| `num`     | Number of tested noise values                 |
-| `shots`   | Number of 100-shot simulator batches          |
-| `n`       | Number of qubits                              |
-| `seed`    | Optional seed for selecting the target states |
-
-The noise values are generated with:
-
-```python
-np.logspace(a, b, num=num)
-```
-
-For example,
-
-```python
-a = -3
-b = -1
-num = 20
-```
-
-produces 20 logarithmically spaced values between `10^-3` and `10^-1`.
-
----
-
-## Meaning of `shots` in the continuous model
-
-The `shots` parameter is not passed directly to Qiskit Aer as the total number of measurements.
-
-The circuit is executed in batches of 100 shots:
-
-```python
-for _ in range(shots):
-    batch_counts = QuantumSimulator(qc, shots=100)
-```
-
-Therefore,
+In this script,
 
 ```text
-total measurements per target and noise value = 100 × shots
+total measurements = 100 × shots
 ```
 
-For example,
+for each target and noise value.
 
-```text
-shots = 200
-```
+The current target-generation function tests `n` sampled target states, not all `2^n` computational-basis states.
 
-corresponds to
+## Parallel runs and raw output
 
-```text
-200 × 100 = 20,000 measurements
-```
+The continuous simulation requires many independent coherent-error realizations and was therefore parallelized.
 
-for each marked target and each noise value.
-
-All these batches reuse the same noisy circuit. They improve the measurement statistics but do not generate new coherent-error angles.
-
-A new coherent-error realization is generated when the circuit is rebuilt.
-
----
-
-## Target states in the continuous script
-
-The current `binary_strings(n)` function does not generate all `2^n` computational-basis states.
-
-Instead, it generates `n` target states:
-
-* one state with one zero;
-* one state with two zeros;
-* ...
-* one state with `n` zeros.
-
-The positions of the zeros are selected randomly.
-
-For example, for `n=6`, the script tests six marked states rather than all 64 possible states.
-
-To test all computational-basis targets, replace the function with:
-
-```python
-def binary_strings(n: int) -> list[str]:
-    return [
-        format(i, f"0{n}b")
-        for i in range(2**n)
-    ]
-```
-
-This provides a more complete average but increases the simulation cost.
-
----
-
-# Parallel execution and raw result files
-
-The continuous simulation requires many independent random circuit realizations. It was therefore parallelized.
-
-Each parallel job runs the same noise sweep and generates one raw failure-probability curve. The curve is stored in a text file instead of being averaged immediately.
-
-The saving function uses append mode:
-
-```python
-with open(filename, "a") as file:
-```
-
-This allows several independent runs to be stored in the same file.
-
-A typical raw file has the form:
+Each job produces one complete noise-sweep curve and stores it in a text file. Append mode is used so that repeated runs can be collected:
 
 ```text
 Shots = 200
 0.0012 0.0018 0.0025 ... 0.1840
 Shots = 200
 0.0010 0.0017 0.0027 ... 0.1815
-Shots = 200
-0.0011 0.0019 0.0026 ... 0.1862
 ```
 
-Each numerical row represents one complete noise sweep from one independent run.
+Each numerical row is one independent raw curve.
 
-For `num=20`, each numerical row must contain 20 values.
-
----
-
-## Recommended parallel workflow
-
-It is safer for each parallel process to write to its own file.
-
-For example:
+For parallel execution, it is safer to use one file per job:
 
 ```text
 GSA_cont_n6_job_001.txt
@@ -272,55 +109,17 @@ GSA_cont_n6_job_002.txt
 GSA_cont_n6_job_003.txt
 ```
 
-After all jobs have finished, combine the files:
+Combine them after all jobs finish:
 
 ```bash
 cat GSA_cont_n6_job_*.txt > GSA_cont_n6_all.txt
 ```
 
-The combined file can then be processed with `retrieveinfo.py`.
+Only combine runs produced with the same noise range, qubit number, number of points, shot count, and target-selection method.
 
-Using separate files avoids several processes writing to the same output file at the same time.
+## Retrieving the averaged curve
 
----
-
-## Output-file naming
-
-Use filenames that describe the simulation settings.
-
-A recommended format is:
-
-```text
-GSA_<model>_n=<qubits>_points=<num>_job=<id>.txt
-```
-
-For example:
-
-```text
-GSA_continuous_n=6_points=20_job=007.txt
-```
-
-Do not combine files produced with different:
-
-* qubit numbers;
-* noise ranges;
-* numbers of noise points;
-* shot counts;
-* target-selection methods.
-
-The retrieval script averages every valid numerical row and cannot detect whether two rows came from different experiments.
-
----
-
-# Retrieving the averaged continuous result
-
-The raw curves are processed using:
-
-```text
-retrieveinfo.py
-```
-
-Run it with:
+Run:
 
 ```bash
 python retrieveinfo.py
@@ -328,30 +127,12 @@ python retrieveinfo.py
 
 The script:
 
-1. opens the selected text file;
-2. skips empty lines;
-3. skips lines beginning with `Shots`;
-4. converts each numerical row into an array;
-5. checks that each row contains the expected number of values;
-6. computes the column-wise mean.
+1. skips empty lines and `Shots` headers;
+2. reads each numerical row;
+3. checks the number of values;
+4. computes the column-wise mean over all runs.
 
-If the file contains `R` independent runs and `M` noise values, the data form an array of shape
-
-```text
-R × M
-```
-
-The final value at noise index `j` is
-
-```text
-mean[j] = average of column j over all independent runs.
-```
-
----
-
-## Selecting the input file
-
-At the bottom of `retrieveinfo.py`, change the input filename:
+Set the input file at the bottom of `retrieveinfo.py`:
 
 ```python
 mean_values = read_mean_array(
@@ -362,72 +143,23 @@ mean_values = read_mean_array(
 print(mean_values.tolist())
 ```
 
-The value of `expected_length` must match `num` in `GSA_Continuous.py`.
+`expected_length` must match `num` in `GSA_Continuous.py`.
 
-For example, when
-
-```python
-num = 30
-```
-
-use:
-
-```python
-mean_values = read_mean_array(
-    "GSA_cont_n6_all.txt",
-    expected_length=30,
-)
-```
-
----
-
-## Importing the retrieval function
-
-The retrieval function can also be imported into another Python script:
-
-```python
-from retrieveinfo import read_mean_array
-
-mean_curve = read_mean_array(
-    "GSA_cont_n6_all.txt",
-    expected_length=20,
-)
-
-print(mean_curve)
-```
-
-The current retrieval script computes only the mean. It does not compute:
-
-* the standard deviation;
-* the standard error;
-* confidence intervals;
-* the corresponding noise-axis values.
-
-The noise axis can be rebuilt using the same parameters as the simulation:
+The script returns the mean curve only. The corresponding noise axis can be rebuilt with:
 
 ```python
 x = np.logspace(a, b, num=num)
 ```
 
----
+## Pauli-noise simulation
 
-# Pauli depolarizing-channel simulation
-
-The Pauli model is implemented in:
-
-```text
-GSA_Pauli.py
-```
-
-Run it with:
+Run:
 
 ```bash
 python GSA_Pauli.py
 ```
 
-## Pauli channel
-
-The script applies a symmetric Pauli channel with total error probability `p`:
+The Pauli channel is
 
 ```text
 P(X) = p/3
@@ -436,15 +168,9 @@ P(Z) = p/3
 P(I) = 1 - p
 ```
 
-The channel is added using a Qiskit Aer `NoiseModel`.
+where `p` is the total non-identity error probability.
 
-The ideal Grover circuit is constructed first. The noise model is then attached to the supported single-qubit basis gates during simulation.
-
----
-
-## Main Pauli-model parameters
-
-A typical parameter block is:
+A typical run is:
 
 ```python
 results = RunGSA_AllNoise_Pauli(
@@ -456,31 +182,9 @@ results = RunGSA_AllNoise_Pauli(
 )
 ```
 
-The parameters are:
+In this script, `shots` is passed directly to Qiskit Aer.
 
-| Parameter | Meaning                                 |
-| --------- | --------------------------------------- |
-| `a`       | Lower exponent of the Pauli-error range |
-| `b`       | Upper exponent of the Pauli-error range |
-| `num`     | Number of error probabilities           |
-| `shots`   | Number of Aer measurements per target   |
-| `n`       | Number of qubits                        |
-
-Unlike the continuous script, the Pauli script passes `shots` directly to Aer.
-
-Therefore,
-
-```text
-total measurements per target and noise value = shots
-```
-
-The current Pauli script prints the result and plots the curve directly.
-
----
-
-## Saving the Pauli result
-
-To store the Pauli curve in a text file, add:
+The result is printed and plotted. It can also be saved with:
 
 ```python
 np.savetxt(
@@ -489,68 +193,27 @@ np.savetxt(
 )
 ```
 
-This writes one row containing the complete Pauli-noise sweep.
+## Comparing the models
 
----
-
-# Comparing the continuous and Pauli models
-
-Both scripts use the same performance metric:
+Both scripts compute
 
 ```text
 failure probability
-    = 1 - probability of measuring the marked target
+    = 1 - probability of measuring the marked state.
 ```
 
-However, their default settings are not directly identical.
+Before comparing their curves, note that:
 
-## Target-state averaging
+* the continuous script currently tests `n` sampled targets;
+* the Pauli script tests all `2^n` targets;
+* the continuous parameter `k` is not the same as the Pauli probability `p`;
+* the two scripts use different shot conventions.
 
-The current continuous script tests `n` sampled target states.
+Use the same target set and the appropriate noise-matching rule for a direct comparison.
 
-The Pauli script tests all `2^n` computational-basis target states.
+## Reproducibility
 
-For a direct comparison, use the same target set in both simulations.
-
-## Noise parameters
-
-The continuous script scans `k`, while the sampled angular standard deviation is `k/3`.
-
-The Pauli script scans the total non-identity probability `p`.
-
-The parameters `k` and `p` should not automatically be treated as equal. Use the matching rule defined for the continuous and Pauli models before comparing the curves.
-
-## Shot conventions
-
-The scripts use different shot conventions:
-
-```text
-Continuous model: 100 × shots
-Pauli model:      shots
-```
-
-Compare normalized probabilities rather than raw count totals.
-
-## Independent realizations
-
-In the continuous model, each circuit construction samples new coherent-error angles.
-
-In the Pauli model, each shot samples the stochastic Pauli channel through Aer.
-
-Several independent continuous runs are therefore stored and averaged to obtain a stable result.
-
----
-
-# Reproducibility
-
-The continuous simulation uses two random-number generators:
-
-* Python's `random` module selects target states;
-* NumPy samples the coherent-error angles.
-
-The current optional `seed` controls only the Python `random` module.
-
-To reproduce both the target selection and the coherent errors, seed both generators:
+The continuous script uses both Python and NumPy random generators. To reproduce target selection and coherent errors, seed both:
 
 ```python
 import random
@@ -562,146 +225,13 @@ random.seed(seed)
 np.random.seed(seed)
 ```
 
-For parallel runs, assign a different seed to every job.
+Use a different seed for each parallel job.
 
-For example:
-
-```python
-seed = 1000 + job_index
-
-random.seed(seed)
-np.random.seed(seed)
-```
-
-Record the seed in the job log or output filename.
-
----
-
-# Typical workflow
-
-```text
-Choose the number of qubits
-            |
-            v
-Set the noise range and shot count
-            |
-            v
-Run GSA_Continuous.py in several independent jobs
-            |
-            v
-Store one raw curve per job
-            |
-            v
-Combine the compatible raw files
-            |
-            v
-Run retrieveinfo.py
-            |
-            v
-Obtain the mean continuous-noise curve
-            |
-            v
-Run GSA_Pauli.py
-            |
-            v
-Compare the two normalized failure-probability curves
-```
-
----
-
-# Example continuous-model workflow
-
-Edit `GSA_Continuous.py`:
-
-```python
-seed = 1
-
-random.seed(seed)
-np.random.seed(seed)
-
-results = RunGSA_AllNoise(
-    a=-4,
-    b=-1,
-    num=20,
-    shots=200,
-    n=6,
-    seed=seed,
-)
-
-save_table(
-    [results],
-    "GSA_cont_n6_job_001.txt",
-)
-```
-
-Run several jobs with different seeds:
-
-```bash
-python GSA_Continuous.py
-```
-
-Combine their output files:
-
-```bash
-cat GSA_cont_n6_job_*.txt > GSA_cont_n6_all.txt
-```
-
-Edit `retrieveinfo.py`:
-
-```python
-mean_values = read_mean_array(
-    "GSA_cont_n6_all.txt",
-    expected_length=20,
-)
-
-print(mean_values.tolist())
-```
-
-Run:
-
-```bash
-python retrieveinfo.py
-```
-
----
-
-# Common mistakes
-
-## Using the wrong input filename in `retrieveinfo.py`
-
-Change the filename at the bottom of the script to the actual combined output file.
-
-## Using the wrong expected row length
-
-The value of `expected_length` must equal `num` in the continuous simulation.
-
-## Mixing incompatible runs
-
-Do not average curves generated with different parameter sets.
-
-## Forgetting append mode
-
-The continuous script appends to an existing file. Delete or rename the old file before starting a different experiment.
-
-## Assuming each 100-shot batch is a new noise realization
-
-All batches inside `runcircuitnoisy()` reuse the same sampled noisy circuit.
-
-## Comparing raw counts
-
-The continuous and Pauli scripts use different shot conventions. Compare normalized failure probabilities.
-
-## Comparing different target sets
-
-The current continuous and Pauli scripts do not average over the same marked states by default.
-
----
-
-# Citation
+## Citation
 
 This code accompanies:
 
 > Y. El Kaderi, A. Honecker, and I. Andriyanova,
 > *Continuous Noise Model for Quantum Circuits*.
 
-Please cite the corresponding work and the GitHub repository when using these scripts or their generated data.
+Please cite the corresponding work and this repository when using the code or generated data.
