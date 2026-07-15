@@ -93,7 +93,7 @@ The files can then be combined or averaged during post-processing.
 This code accompanies:
 
 > Y. El Kaderi, A. Honecker, and I. Andriyanova,
-> *Continuous Noise Model for Quantum Circuits*.
+> *Continuous Noise Model for Quantum Circuits* [arXiv:2604.26008](https://arxiv.org/abs/2604.26008).
 
 Please cite the corresponding work and this repository when using the code or its results.
 
