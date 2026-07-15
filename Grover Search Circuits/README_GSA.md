@@ -4,7 +4,7 @@ This folder contains two Qiskit simulations of Grover's search algorithm. Both s
 
 ## Files
 
-### `GSA_Continuous_commented.py`
+### `GSA_Continuous.py`
 
 Simulates Grover search with random coherent one-qubit rotations. After each noisy one-qubit gate, the circuit applies
 
@@ -31,7 +31,7 @@ For each noise strength, the script:
 
 A key point is that the random angles are sampled when the circuit is built. All shot batches for that circuit therefore use the same coherent-error realization. To average over independent noise realizations, the circuit must be rebuilt inside the batch loop.
 
-### `GSA_Pauli_commented.py`
+### `GSA_Pauli.py`
 
 Simulates Grover search with a symmetric stochastic Pauli channel. After each supported one-qubit basis gate, Aer applies
 
@@ -82,7 +82,7 @@ python -m pip install numpy matplotlib qiskit qiskit-aer
 Run the continuous-noise model with
 
 ```bash
-python GSA_Continuous_commented.py
+python GSA_Continuous.py
 ```
 
 The default configuration uses six qubits, 20 logarithmically spaced noise strengths from \(10^{-3}\) to \(10^{-1}\), and 200 batches of 100 shots. Results are appended to `GSA6qubits_ed2.txt`.
@@ -90,7 +90,7 @@ The default configuration uses six qubits, 20 logarithmically spaced noise stren
 Run the Pauli model with
 
 ```bash
-python GSA_Pauli_commented.py
+python GSA_Pauli.py
 ```
 
 The default configuration uses six qubits, all 64 target states, 20 logarithmically spaced error probabilities from \(10^{-6}\) to \(10^{-1}\), and 100,000 shots per target. The result array is printed and plotted.
