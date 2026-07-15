@@ -30,12 +30,6 @@ Random Clifford Circuits/
 
 > **Note:** `RetrieveInfo.py` does not currently retrieve data from an output file. Rename it or replace it with a post-processing script to avoid confusion.
 
-## Installation
-
-```bash
-python -m pip install numpy sympy qiskit qiskit-aer
-```
-
 ## Simulation method
 
 The code generates random circuits containing fixed numbers of:
@@ -117,21 +111,6 @@ RandomCircuits10qbts_job_002.txt
 ```
 
 The files can then be combined or averaged during post-processing.
-
-## Reproducibility
-
-To reproduce a random circuit and its sampled errors, set the same seed for Python and NumPy:
-
-```python
-import random
-import numpy as np
-
-seed = 1234
-random.seed(seed)
-np.random.seed(seed)
-```
-
-Use a different seed for each independent parallel job.
 
 ## Citation
 
