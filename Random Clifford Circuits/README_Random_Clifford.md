@@ -55,30 +55,6 @@ The ideal, full-noise, and approximate circuits are simulated with Qiskit Aer. T
 F = |<psi_ideal | psi_noisy>|².
 ```
 
-## Running the code
-
-From this folder, run:
-
-```bash
-python RandCirc.py
-```
-
-The main parameters are set near the end of the file:
-
-```python
-results = run_different_circuits(
-    n_qubits=10,
-    sigma=1e-4,
-    n_noise_samples=100,
-)
-```
-
-| Parameter         | Meaning                                             |
-| ----------------- | --------------------------------------------------- |
-| `n_qubits`        | Number of qubits                                    |
-| `sigma`           | Standard deviation of each fresh coherent error     |
-| `n_noise_samples` | Noise realizations averaged for each random circuit |
-
 ## Output
 
 The default run evaluates a (10\times10) grid:
